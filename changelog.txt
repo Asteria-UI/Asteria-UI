@@ -1,0 +1,3 @@
+changelog ={
+  [[Initial upload. Fully functional with certain GMCP values missing from game.]],
+}
