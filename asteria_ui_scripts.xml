@@ -1,0 +1,1034 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<TriggerPackage />
+	<TimerPackage />
+	<AliasPackage />
+	<ActionPackage />
+	<ScriptPackage>
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>Asteria UI</name>
+			<packageName></packageName>
+			<script></script>
+			<eventHandlerList />
+			<Script isActive="yes" isFolder="no">
+				<name>Do things at Login</name>
+				<packageName></packageName>
+				<script>asteriaui = asteriaui or {}
+
+function asteriaui.connected()
+  
+  asteriaui.displayUIMessage("Connected... Initializing UI")
+  
+  -- Load the external packages we need for building the UI
+  EMCO = require("asteriaui.emco")
+  fText = require("asteriaui.ftext")
+  DemonTools = require("asteriaui.demontools")
+  
+  -- Load the UI settings
+  asteriaui.settings = asteriaui.settings or {}
+  
+  if io.exists(getMudletHomeDir().."/asteriaui.settings.lua") then
+    table.load(getMudletHomeDir().."/asteriaui.settings.lua", asteriaui.settings) -- using / is OK on Windows too.
+    asteriaui.displayUIMessage("Settings Table Loaded")
+  end
+    
+  -- Build the actual UI elements
+  asteriaui.createUI()
+
+end
+
+registerAnonymousEventHandler("sysConnectionEvent", "asteriaui.connected")</script>
+				<eventHandlerList />
+			</Script>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>UI Elements</name>
+				<packageName></packageName>
+				<script></script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>UI Styles</name>
+					<packageName></packageName>
+					<script>function asteriaui.defineStyles()
+
+-- Set Input Mono as font if it exists
+
+  if getAvailableFonts()["Input Mono"] then
+      asteriaui.consoleFont = "Input Mono"
+      asteriaui.cssFont = "font-family: 'Input Mono', serif;"
+    else
+      asteriaui.consoleFont = "Bitstream Vera Sans Mono"
+      asteriaui.cssFont = "font-family: 'Bitstream Vera Sans Mono', serif;"
+  end
+
+
+  asteriaui.consoleFontSize = 13
+  asteriaui.gaugeFontSize = 13
+  asteriaui.consoleBackgroundColor = "&lt;15,15,15&gt;"
+
+-- Define all the styling for gauges and other elements
+  
+  local gaugeBorder = "border-radius: 3px;border: 1px solid rgba(160, 160, 160, 50%);"
+
+  asteriaui.styles = {
+    
+    gaugeText = f[[{asteriaui.cssFont} qproperty-alignment: 'AlignRight|AlignVCenter';]],
+    
+    HPGaugeFront = f[[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(150, 25, 25), stop: 0.1 rgb(180,0,0), stop: 0.85 rgb(155,0,0), stop: 1 rgb(130,0,0)); {gaugeBorder}]],
+    HPGaugeBack = f[[background-color: rgb(60, 0, 0); {gaugeBorder}]],
+    
+    MPGaugeFront = f[[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(127, 0, 87), stop: 0.1 rgb(147, 0, 107), stop: 0.85 rgb(117, 0, 77), stop: 1 rgb(117, 0, 67)); {gaugeBorder}]],
+    MPGaugeBack = f[[background-color: rgb(60, 0, 60); {gaugeBorder}]],
+    
+    SPGaugeFront = f[[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(25, 150, 25), stop: 0.1 rgb(0,180,0), stop: 0.85 rgb(0,155,0), stop: 1 rgb(0,130,0)); {gaugeBorder}]],
+    SPGaugeBack = f[[background-color: rgb(0, 60, 0); {gaugeBorder}]],
+    
+    balanceGaugeFront = f[[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(25, 25, 150), stop: 0.1 rgb(0,0,180), stop: 0.85 rgb(0,0,155), stop: 1 rgb(0,0,130)); {gaugeBorder}]],
+    balanceGaugeBack = f[[background-color: rgb(0, 0, 60); {gaugeBorder}]],
+    
+    vitalsLabel = f[[font-weight: 400; padding-left: 2px; background-color: rgba(0,0,0,0%); {asteriaui.cssFont}]],
+    balanceLabel = f[[font-weight: 200; qproperty-alignment: 'AlignRight|AlignVCenter'; background-color: rgba(0,0,0,0%); {asteriaui.cssFont}]],
+    
+    enemyGaugeFront = f[[{asteriaui.cssFont} background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(150, 25, 25), stop: 0.1 rgb(180,0,0), stop: 0.85 rgb(155,0,0), stop: 1 rgb(130,0,0)); {gaugeBorder}]],
+    enemyGaugeBack = f[[background-color: rgb(60, 0, 0); {gaugeBorder}]],
+    
+  }
+  
+ 
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>UI Adjustable Consoles</name>
+					<packageName></packageName>
+					<script>function asteriaui.createUI(action)
+  
+  -- Set the UI variables
+  
+  -- Define stylesheets and fonts
+  asteriaui.defineStyles()
+  
+  -- Do some caltulations on font sizes to make sure everything fits into the console we create
+  -- By calculating the pixel width of the font, we are able to make sure we size the consoles and windows correctly
+  asteriaui.fontWidth, asteriaui.fontHeight = calcFontSize(asteriaui.consoleFontSize)
+  -- If someone sets a different font/fontsize in the main window, lets make sure we have that defined as well
+  asteriaui.mainFontWidth, asteriaui.mainFontHeight = calcFontSize(getFontSize("main"))
+  -- Knowing the window size, lets us calculate how mush space we can use for everything else and still display the mud output
+  asteriaui.mainWindowWidth, asteriaui.mainWindowHeight = getMainWindowSize()
+  
+  -- Set up the sizing we need to create the UI
+  
+  -- Set the size of the left console
+  asteriaui.leftWidth = asteriaui.fontWidth * 37
+  asteriaui.leftConsoleWidth = asteriaui.fontWidth * 36
+    
+  -- Set the size of the right console
+  asteriaui.rightWidth = asteriaui.mainWindowWidth - asteriaui.leftWidth - (asteriaui.mainFontWidth * 100)
+  
+  -- Set the bottom console width
+  asteriaui.bottomWidth = asteriaui.mainWindowWidth - asteriaui.rightWidth - asteriaui.leftWidth
+
+
+  -- Set border sizez
+  
+  setBorderSizes(0, asteriaui.rightWidth, 110, asteriaui.leftWidth+10)
+  
+  -- Set main window wrap to look pretty
+  setWindowWrap("main", 95)
+  
+  -- Create the top right container to hold channel capture
+  asteriaui.leftContainer = Adjustable.Container:new({
+    name = "Left",
+    x = "0",
+    y = "0",
+    height = "100%",
+    width = asteriaui.leftWidth,
+    font = asteriaui.consoleFont,
+    autoLoad = false,
+  })
+  
+    
+  -- Create the top right container to hold channel capture
+  asteriaui.rightContainer = Adjustable.Container:new({
+    name = "Right",
+    x = -asteriaui.rightWidth,
+    y = "0",
+    height = "100%",
+    width = asteriaui.rightWidth,
+    font = asteriaui.consoleFont,
+    autoLoad = false,
+  })
+  
+  -- Create adjustable container to hold the guages in the bottom
+  asteriaui.bottomContainer = Adjustable.Container:new({
+    name = "Bottom",
+    x = asteriaui.leftWidth,
+    y = "-100px",
+    height = "100px",
+    width = asteriaui.bottomWidth,
+    font = asteriaui.consoleFont,
+    autoLoad = false,
+  })
+  
+
+  -- Attach the conteiners to the correct edges to keep them there.
+  asteriaui.bottomContainer:attachToBorder("bottom")
+  asteriaui.leftContainer:attachToBorder("left")
+  asteriaui.rightContainer:attachToBorder("right")
+  
+  -- Connect the bottom container to the two edges
+  asteriaui.bottomContainer:connectToBorder("left")
+  asteriaui.bottomContainer:connectToBorder("right")
+  
+  -- Lock the container to make it pretty
+  asteriaui.leftContainer:lockContainer()
+  asteriaui.rightContainer:lockContainer()
+  asteriaui.bottomContainer:lockContainer()
+  
+  -- Create a MiniConsole to hold the guages in place
+  asteriaui.gauges = Geyser.MiniConsole:new({
+  name="Gauges",
+  x = "0",
+  y = "0",
+  font = asteriaui.consoleFont,
+  width = "100%",
+  height = "100%",
+  color = asteriaui.consoleBackgroundColor,
+  }, asteriaui.bottomContainer)
+  
+  -- Create a MiniConsole on the left side to hold other consoles
+  
+  asteriaui.leftConsole = Geyser.MiniConsole:new({
+  name="leftConsole",
+  x = "0",
+  y = "0",
+  font = asteriaui.consoleFont,
+  width = "100%",
+  height = "100%",
+  color = asteriaui.consoleBackgroundColor,
+  }, asteriaui.leftContainer)
+  
+  
+  if action == "rebuild" then
+    asteriaui.displayUIMessage("Rebuilding UI after window resize")
+    centerview(mmp.currentroom)
+  else
+    asteriaui.displayUIMessage("Building UI Elements")
+  end
+  
+  -- Build all the UI elements
+  asteriaui.createMapContainer()
+  asteriaui.createChannelContainer()
+  asteriaui.createPlayerGuages()
+  asteriaui.createBalanceGauge()
+  asteriaui.createEnemyGauges()
+  asteriaui.createWorldDisplay()
+  asteriaui.createXPDisplay()
+  asteriaui.createEQDisplayHeadling()
+  asteriaui.createEQDisplay()
+  asteriaui.createRoomDisplay()
+  
+  local success = stopNamedTimer("asteriaui.windowResize","UI resize")
+  
+  if action ~= "rebuild" then
+    raiseEvent("asteriauiBuilt")
+  end
+  
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Channel Display</name>
+					<packageName></packageName>
+					<script>function asteriaui.createChannelContainer()
+  
+  asteriaui.channelContainer = EMCO:new({
+    name = "Channels",
+    x = "0",
+    y = "1",
+    width = "100%",
+    height = "50%",
+    gap = 5,
+    fontSize = asteriaui.consoleFontSize-1,
+    consoleColor = asteriaui.consoleBackgroundColor,
+    consoles = {
+      "All",
+      "Chat",
+      "Tell",
+      "Guild",
+      "Shout",
+      "Newbie",
+      "Misc",
+    },
+    allTab = true,
+    allTabName = "All",
+    tabBoxColor = {10,10,10},
+    tabFontSize = 12,
+    activeTabFGColor = "white",
+    activeTabBGColor = "darkgoldenrod",
+    inactiveTabBGColor = "dim_grey",
+    tabBoxColor = "dim_grey",
+  }, asteriaui.rightContainer)
+
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Map and Settings Display</name>
+					<packageName></packageName>
+					<script>function asteriaui.createMapContainer()
+  
+  asteriaui.mapContainer = EMCO:new({
+    name = "MapAndSettings",
+    x = "0",
+    y = "50%",
+    width = "100%",
+    height = "50%",
+    gap = 2,
+    consoleColor = asteriaui.consoleBackgroundColor,
+    consoles = {
+      "Map",
+      "Settings",
+    },
+    mapTabName = "Map",
+    mapTab = true,
+    tabFontSize = 12,
+    font = asteriaui.consoleFont,
+    fontSize = asteriaui.consoleFontSize-1,
+    activeTabFGColor = "white",
+    activeTabBGColor = "darkgoldenrod",
+    inactiveTabBGColor = "dim_grey",
+    tabBoxColor = "dim_grey",
+  }, asteriaui.rightContainer)
+
+  -- Set a map zoom level that is comfortable for most people
+  setMapZoom(10)
+  --asteriaui.displayUIMessage("Setting Standard Map Zoom")
+  
+  -- Set the mapper background color the same as everything else
+  setMapBackgroundColor(15,15,15)
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Player Vitals Gauges</name>
+					<packageName></packageName>
+					<script>function asteriaui.createPlayerGuages()
+  
+  -- Create the HP guage
+  asteriaui.hpGauge = Geyser.Gauge:new({
+  name="hpGauge",
+  x= "10",
+  y= "5",
+  width="250",
+  height="20",
+  }, asteriaui.gauges)
+  
+  -- set the front and back styling for the guage
+  asteriaui.hpGauge.front:setStyleSheet(asteriaui.styles.HPGaugeFront)
+  asteriaui.hpGauge.back:setStyleSheet(asteriaui.styles.HPGaugeBack)
+  
+  -- Set the gauge text styling
+  asteriaui.hpGauge.text:setStyleSheet(asteriaui.styles.gaugeText)
+  asteriaui.hpGauge.text:setFontSize(asteriaui.gaugeFontSize)
+  
+  -- Center the text on the gauge
+  asteriaui.hpGauge.text:echo(nil, "nocolor", "c")
+  
+  -- Set the label for the guage
+  asteriaui.hpLabel = Geyser.Label:new({
+    name = "hpLabel",
+    x = "5", y = "0",
+    width = "250",
+    height = "20",
+    message = "HP",
+  }, asteriaui.hpGauge)
+  
+  asteriaui.hpLabel:setStyleSheet(asteriaui.styles.vitalsLabel)
+  asteriaui.hpLabel:setFontSize(asteriaui.gaugeFontSize)  
+  
+  
+  -- Create the Mana guage
+  asteriaui.mpGauge = Geyser.Gauge:new({
+  name="mpGauge",
+  x= "10",
+  y= "30",
+  width="250",
+  height="20",
+  }, asteriaui.gauges)
+  
+  -- set the front and back styling for the guage
+  asteriaui.mpGauge.front:setStyleSheet(asteriaui.styles.MPGaugeFront)
+  asteriaui.mpGauge.back:setStyleSheet(asteriaui.styles.MPGaugeBack)
+  
+  -- Set the gauge text styling
+  asteriaui.mpGauge.text:setStyleSheet(asteriaui.styles.gaugeText)
+  asteriaui.mpGauge.text:setFontSize(asteriaui.gaugeFontSize)
+  
+  -- Center the text on the gauge
+  asteriaui.mpGauge.text:echo(nil, "nocolor", "c")
+  
+  -- Set the label for the guage
+  asteriaui.mpLabel = Geyser.Label:new({
+    name = "mpLabel",
+    x = "5", y = "0",
+    width = "250",
+    height = "20",
+    message = "MP",
+  }, asteriaui.mpGauge)
+ 
+  asteriaui.mpLabel:setStyleSheet(asteriaui.styles.vitalsLabel)
+  asteriaui.mpLabel:setFontSize(asteriaui.gaugeFontSize)  
+  
+  -- Create the Stamina guage
+  asteriaui.spGauge = Geyser.Gauge:new({
+  name = "spGauge",
+  x = "10",
+  y = "55",
+  width = "250",
+  height = "20",
+  }, asteriaui.gauges)
+  
+  -- set the front and back styling for the guage
+  asteriaui.spGauge.front:setStyleSheet(asteriaui.styles.SPGaugeFront)
+  asteriaui.spGauge.back:setStyleSheet(asteriaui.styles.SPGaugeBack)
+  
+  -- Set the gauge text styling
+  asteriaui.spGauge.text:setStyleSheet(asteriaui.styles.gaugeText)
+  asteriaui.spGauge.text:setFontSize(asteriaui.gaugeFontSize)
+  
+  -- Center the text on the gauge
+  asteriaui.spGauge.text:echo(nil, "nocolor", "c")
+  
+  -- Set the label for the guage
+  asteriaui.spLabel = Geyser.Label:new({
+    name = "spLabel",
+    x = "5",
+    y = "0",
+    width = "250",
+    height = "20",
+    message = "SP",
+  }, asteriaui.spGauge)
+  
+  asteriaui.spLabel:setStyleSheet(asteriaui.styles.vitalsLabel)
+  asteriaui.spLabel:setFontSize(asteriaui.gaugeFontSize)  
+  
+  
+  asteriaui.updatePlayerGauges()
+  asteriaui.updateBalanceGauge()
+   
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Balance Gauge</name>
+					<packageName></packageName>
+					<script>function asteriaui.createBalanceGauge()
+
+  -- Create the Balance guage
+  asteriaui.balGauge = Geyser.Gauge:new({
+  name = "balGauge",
+  x = "270",
+  y= "30",
+  width = "300",
+  height = "20",
+  }, asteriaui.gauges)
+  
+  -- set the front and back styling for the guage
+  asteriaui.balGauge.front:setStyleSheet(asteriaui.styles.balanceGaugeFront)
+  asteriaui.balGauge.back:setStyleSheet(asteriaui.styles.balanceGaugeBack)
+  
+  -- Set the gauge text styling
+  asteriaui.balGauge.text:setStyleSheet(asteriaui.styles.gaugeText)
+  asteriaui.balGauge.text:setFontSize(asteriaui.gaugeFontSize)
+  
+  -- Center the text on the gauge
+  asteriaui.balGauge.text:echo(nil, "nocolor", "c")
+  
+  asteriaui.updateBalanceGauge()
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Enemy Guage</name>
+					<packageName></packageName>
+					<script>function asteriaui.createEnemyGauges()
+  
+  -- Create the Enemy HP guage
+  asteriaui.enemyGauge = Geyser.Gauge:new({
+  name="enemyGauge",
+  x= "270",
+  y= "5",
+  width="300",
+  height="20",
+  }, asteriaui.gauges)
+  -- set the front styling for the Enemy HP guage
+  asteriaui.enemyGauge.front:setStyleSheet(asteriaui.styles.enemyGaugeFront)
+  -- set the back styling for the Enemy HP guage
+  asteriaui.enemyGauge.back:setStyleSheet(asteriaui.styles.enemyGaugeBack)
+  -- Set the gauge text styling
+  asteriaui.enemyGauge.text:setStyleSheet(asteriaui.styles.gaugeText)
+  asteriaui.enemyGauge.text:setFontSize(asteriaui.gaugeFontSize)
+  asteriaui.enemyGauge.text:echo(nil, "nocolor", "c")
+
+  
+  -- Set the default label for the Enemy HP guage
+  asteriaui.enemyLabel = Geyser.Label:new({
+    name = "enemyLabel",
+    x = "5",
+    y = "0",
+    width = "100%",
+    height = "100%",
+  }, asteriaui.enemyGauge)
+  -- set the label background to be transparent
+  asteriaui.enemyLabel:setStyleSheet(asteriaui.styles.vitalsLabel)
+  asteriaui.enemyLabel:setFontSize(asteriaui.gaugeFontSize)  
+  
+  asteriaui.updateEnemyGauges()
+   
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>XP and Gold Display</name>
+					<packageName></packageName>
+					<script>function asteriaui.createXPDisplay()
+  
+  asteriaui.xpConsole = Geyser.MiniConsole:new({
+    name = "xpConsole",
+    x = "273",
+    y = "59",
+    width = "300",
+    height = "20",
+    font = asteriaui.consoleFont,
+    fontSize = asteriaui.consoleFontSize,
+    color = asteriaui.consoleBackgroundColor,
+    }, asteriaui.gauges)
+
+    asteriaui.updateXPDisplay()
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>World Display</name>
+					<packageName></packageName>
+					<script>function asteriaui.createWorldDisplay()
+
+  asteriaui.worldDisplay = Geyser.MiniConsole:new({
+    name="worldDisplay",
+    x= "1c",
+    y= "0",
+    width = asteriaui.leftConsoleWidth,
+    height = "5c",
+    font = asteriaui.consoleFont,
+    fontSize = asteriaui.consoleFontSize-1,
+    --color = "green",
+    color = asteriaui.consoleBackgroundColor,
+  }, asteriaui.leftConsole)
+
+  asteriaui.updateWorldDisplay()
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>EQ Display Headline</name>
+					<packageName></packageName>
+					<script>function asteriaui.createEQDisplayHeadling()
+
+  asteriaui.EQDisplayHeadline = Geyser.MiniConsole:new({
+    name="EQDisplayHeadline",
+    x= "1c",
+    y= "5c",
+    width = asteriaui.leftConsoleWidth,
+    height = "1c",
+    font = asteriaui.consoleFont,
+    fontSize = asteriaui.consoleFontSize-1,
+    --color = "green",
+    color = asteriaui.consoleBackgroundColor,
+  }, asteriaui.leftConsole)
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>EQ Display</name>
+					<packageName></packageName>
+					<script>function asteriaui.createEQDisplay()
+
+  asteriaui.EQDisplay = Geyser.MiniConsole:new({
+    name="EQDisplay",
+    x= "1c",
+    y= "7c",
+    width = asteriaui.leftConsoleWidth,
+    height = "16c",
+    font = asteriaui.consoleFont,
+    fontSize = asteriaui.consoleFontSize-2,
+    --color = "green",
+    color = asteriaui.consoleBackgroundColor,
+  }, asteriaui.leftConsole)
+
+  asteriaui.updateEQDisplay()
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Room Display</name>
+					<packageName></packageName>
+					<script>function asteriaui.createRoomDisplay()
+
+  asteriaui.roomDisplay = Geyser.MiniConsole:new({
+    name="roomDisplay",
+    x= "1c",
+    y= "-10c",
+    autoWrap = true,
+    width = asteriaui.leftConsoleWidth,
+    height = "10c",
+    font = asteriaui.consoleFont,
+    fontSize = asteriaui.consoleFontSize-1,
+    --color = "green",
+    color = asteriaui.consoleBackgroundColor,
+    
+  }, asteriaui.leftConsole)
+  setWindowWrapIndent("roomDisplay", 9)
+  asteriaui.updateRoomDisplay()
+end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Display GMCP Information</name>
+				<packageName></packageName>
+				<script></script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>Capture Channels</name>
+					<packageName></packageName>
+					<script>function asteriaui.channelCapture()
+ 
+  local senderColor
+  
+  if gmcp.Comm.Channel.sender == gmcp.Char.Base.name then
+    senderColor = "&lt;white&gt;"
+    else
+    senderColor = "&lt;cyan&gt;"
+  end
+  
+   local channelColor = {
+    chat = {
+      channelName = "Chat",
+      channelColor = "&lt;dodger_blue&gt;"
+    },
+    newbie = {
+      channelName = "Newbie",
+      channelColor = "&lt;green&gt;"
+    },
+    tell = {
+      channelName = "Tell",
+      channelColor = "&lt;dark_violet&gt;"
+    },
+    guild = {
+      channelName = "Guild",
+      channelColor = "&lt;red&gt;"
+    },
+    shout = {
+      channelName = "Shout",
+      channelColor = "&lt;gold&gt;"
+    },
+    achievement = {
+      channelName = "Misc",
+      channelColor = "&lt;magenta&gt;"
+    },
+    logins = {
+      channelName = "Misc",
+      channelColor = "&lt;magenta&gt;"
+    },
+    death = {
+      channelName = "Misc",
+      channelColor = "&lt;magenta&gt;"
+    },
+   
+  }
+  
+ -- Send chats to the right tab and with the right name and coloring
+  if channelColor[gmcp.Comm.Channel.channel] then
+    asteriaui.channelContainer:cecho(channelColor[gmcp.Comm.Channel.channel].channelName, " "..channelColor[gmcp.Comm.Channel.channel].channelColor..getTime(true, "hh:mm ")..senderColor..ansi2string(gmcp.Comm.Channel.text).."\n\n")
+  end
+
+end
+
+registerAnonymousEventHandler("gmcp.Comm.Channel","asteriaui.channelCapture")</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Update Player Gauges</name>
+					<packageName></packageName>
+					<script>function asteriaui.updatePlayerGauges()
+
+  if gmcp.Char == nil then return end
+  
+  --If gmcp information is availabe set the values, otherwise use dummy values.
+  if gmcp.Char.Vitals then
+
+    -- Update health
+    asteriaui.hpGauge:setValue(gmcp.Char.Vitals.hp, gmcp.Char.Vitals.maxhp, f"&lt;center&gt;{gmcp.Char.Vitals.hp}/{gmcp.Char.Vitals.maxhp}&lt;/center&gt;")
+    
+    -- Update mana
+    asteriaui.mpGauge:setValue(gmcp.Char.Vitals.mp, gmcp.Char.Vitals.maxmp, f"&lt;center&gt;{gmcp.Char.Vitals.mp}/{gmcp.Char.Vitals.maxmp}&lt;/center&gt;")
+
+    -- Update stamina
+    asteriaui.spGauge:setValue(gmcp.Char.Vitals.sp, gmcp.Char.Vitals.maxsp, f"&lt;center&gt;{gmcp.Char.Vitals.sp}/{gmcp.Char.Vitals.maxsp}&lt;/center&gt;")
+    
+  else
+    asteriaui.hpGauge:setValue(100,100)
+    asteriaui.mpGauge:setValue(100,100)
+    asteriaui.spGauge:setValue(100,100)
+  end
+  
+  
+
+end
+
+registerAnonymousEventHandler("gmcp.Char.Vitals","asteriaui.updatePlayerGauges")</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Update Balance Gauge</name>
+					<packageName></packageName>
+					<script>function asteriaui.updateBalanceGauge()
+  if gmcp.Char == nil then return end
+  --If gmcp information is availabe set the values, otherwise use dummy values.
+  
+  if tonumber(gmcp.Char.Balance.balance) ~= 0 then
+    -- Update Balance
+    local balance = gmcp.Char.Balance.maxbalance-gmcp.Char.Balance.balance
+      if string.len(tostring(gmcp.Char.Balance.balance)) &lt; 2 then
+        asteriaui.balGauge:setValue(balance, gmcp.Char.Balance.maxbalance, f"&lt;center&gt;"..gmcp.Char.Balance.balance..".0&lt;/center&gt;")
+      else
+        asteriaui.balGauge:setValue(balance, gmcp.Char.Balance.maxbalance, f"&lt;center&gt;"..gmcp.Char.Balance.balance.."&lt;/center&gt;")
+      end    
+  else
+    asteriaui.balGauge:setValue(100, 100, f"&lt;center&gt;Balanced&lt;/center&gt;")
+    -- Raise an event we can hook into if something needs to happen on regaining balance
+    raiseEvent("asteriaui.charBalanced")
+  end
+  
+  
+
+end
+
+registerAnonymousEventHandler("gmcp.Char.Balance","asteriaui.updateBalanceGauge")</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Update Enemy Gauges</name>
+					<packageName></packageName>
+					<script>function asteriaui.updateEnemyGauges()
+  if gmcp.Char == nil then return end
+  --If gmcp information is availabe set the values, otherwise use dummy values.
+  if gmcp.Char.Enemies[1] then
+    -- Update enemy health
+    asteriaui.enemyGauge.front:setStyleSheet(f[[{asteriaui.cssFont} background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(150, 25, 25), stop: 0.1 rgb(180,0,0), stop: 0.85 rgb(155,0,0), stop: 1 rgb(130,0,0));border-radius: 3px;border: 1px solid rgba(160, 160, 160, 50%);]])
+    asteriaui.enemyGauge:setValue(gmcp.Char.Enemies[1].hp, gmcp.Char.Enemies[1].maxhp, f"&lt;center&gt;"..gmcp.Char.Enemies[1].name.."&lt;/center&gt;")
+    asteriaui.enemyLabel:echo(gmcp.Char.Enemies[1].hp.."/"..gmcp.Char.Enemies[1].maxhp)
+    else
+    asteriaui.enemyGauge.front:setStyleSheet(f[[{asteriaui.cssFont} background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(100, 25, 25), stop: 0.1 rgb(120,0,0), stop: 0.85 rgb(105,0,0), stop: 1 rgb(80,0,0));border-radius: 3px;border: 1px solid rgba(160, 160, 160, 50%);]])
+    asteriaui.enemyGauge:setValue(100,100, f"&lt;center&gt;No Enemy&lt;/center&gt;")
+    asteriaui.enemyLabel:echo("")
+  end
+  
+  
+
+end
+
+registerAnonymousEventHandler("gmcp.Char.Enemies","asteriaui.updateEnemyGauges")</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Update World Display</name>
+					<packageName></packageName>
+					<script>function asteriaui.updateWorldDisplay()
+  local seasonColors = {
+    Spring = "&lt;green&gt;",
+    Summer = "&lt;yellow&gt;",
+    Fall = "&lt;sienna&gt;",
+    Winter = "&lt;white&gt;",
+  }
+  
+  local s = ""
+  if gmcp.World == nil then return end
+  asteriaui.worldDisplay:clear()
+  cecho("worldDisplay", fText.fText("&lt;white&gt;[ Time&lt;gold&gt;: &lt;dodger_blue&gt;"..gmcp.World.Info.tod.."&lt;white&gt; ]&lt;reset&gt;", {alignment = "center", formatType = "c", width = asteriaui.leftWidth/asteriaui.fontWidth, cap = "", spacer = "-", inside = true, mirror = true}))
+  --cecho("morqui.roomCo",fText.fText("Room &lt;gold&gt;# &lt;green&gt;"..gmcp.Room.Info.num.." &lt;orange&gt;Env&lt;white&gt;: [&lt;cyan&gt;"..gmcp.Room.Info.environment.."&lt;white&gt;]", {width = leftWidth/fontWidth, alignment = "center", formatType = "c", textColor = "&lt;orange&gt;", capColor = "&lt;dodger_blue&gt;", cap = "[", spacer = "-", inside = false, mirror = true}))
+  cecho("worldDisplay", "\n")
+  cecho("worldDisplay", fText.fText("The year is &lt;cyan&gt;"..gmcp.World.Info.year.."&lt;grey&gt; and it is "..seasonColors[gmcp.World.Info.season]..gmcp.World.Info.season.."&lt;reset&gt;,", {alignment = "center", formatType = "c", width = asteriaui.leftWidth/asteriaui.fontWidth, cap = "", spacer = " ", inside = false, mirror = true}))
+  cecho("worldDisplay", "\n")
+  if gmcp.World.Info.day ~= 1 then
+    s = "s"
+    else 
+    s = ""
+  end
+  cecho("worldDisplay", fText.fText("&lt;yellow&gt;"..gmcp.World.Info.day.."&lt;grey&gt; day"..s.." into month &lt;gold&gt;"..gmcp.World.Info.mon.."&lt;grey&gt;, known as ", {alignment = "center", formatType = "c", width = asteriaui.leftWidth/asteriaui.fontWidth, cap = "", spacer = " ", inside = false, mirror = true}))
+  cecho("worldDisplay", "\n")
+  cecho("worldDisplay", fText.fText("&lt;white&gt;"..gmcp.World.Info.month, {alignment = "center", formatType = "c", width = asteriaui.leftWidth/asteriaui.fontWidth, cap = "", spacer = " ", inside = false, mirror = true}))
+  
+end
+
+registerAnonymousEventHandler("gmcp.World","asteriaui.updateWorldDisplay")</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Update EQ Display</name>
+					<packageName></packageName>
+					<script>function asteriaui.updateEQDisplay()
+
+  asteriaui.eqLocations = {
+    "mainhand",
+    "offhand",
+    "head",
+    "body",
+    "legs",
+    "feet",
+    "back",
+    "hands",
+    "neck",
+    "rfinger",
+    "lfinger",
+  }
+  
+  asteriaui.EQDisplay:clear()
+  asteriaui.EQDisplayHeadline:clear()
+  if gmcp.Char == nil then return end  
+  
+  cecho("EQDisplayHeadline", fText.fText("&lt;white&gt;[ &lt;gold&gt;Equipment &lt;white&gt;]&lt;reset&gt;", {alignment = "center", formatType = "c", width = asteriaui.leftWidth/asteriaui.fontWidth, cap = "", spacer = "-", inside = true, mirror = true}))
+  
+  cecho("EQDisplay","&lt;green&gt;"..string.format("%-10s","Location"))
+  cecho("EQDisplay","&lt;cyan&gt;Right click to look or remove")
+  cecho("EQDisplay","\n")
+  cecho("EQDisplay","\n")
+  for k,v in pairs(asteriaui.eqLocations) do
+    cecho("EQDisplay","&lt;sandy_brown&gt;"..string.format("%-10s",string.title(v)))
+    if gmcp.Char.Inventory.Worn[v].name == "Nothing" then
+      cecho("EQDisplay", "&lt;red&gt;---\n")
+    else
+      cechoPopup("EQDisplay","&lt;white&gt;"..gmcp.Char.Inventory.Worn[v].name.."\n",
+        {
+        [[send("look ]]..gmcp.Char.Inventory.Worn[v].guid..[[", false)]],
+        [[send("remove ]]..gmcp.Char.Inventory.Worn[v].guid..[[", false)]], 
+        },
+        {
+        "Look at "..gmcp.Char.Inventory.Worn[v].name,
+        "Remove "..gmcp.Char.Inventory.Worn[v].name
+      }, true)
+    end
+    
+  end
+cecho("EQDisplay","\n")
+cechoLink("EQDisplay", "           &lt;cyan&gt;Click to repair all", [[send("repair all")]], "Repair all", true)
+  
+
+end
+
+registerAnonymousEventHandler("gmcp.Char.Inventory.Worn","asteriaui.updateEQDisplay")</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Update XP Display</name>
+					<packageName></packageName>
+					<script>function asteriaui.updateXPDisplay()
+  
+  if gmcp.Char == nil then return end
+  asteriaui.xpConsole:clear()
+  cecho("xpConsole", "&lt;grey&gt;XP&lt;white&gt;:&lt;green&gt; "
+  ..asteriaui.addNumberSeperator(gmcp.Char.Worth.xp)
+  .." &lt;grey&gt;Gold&lt;white&gt;:&lt;gold&gt; "
+  ..asteriaui.addNumberSeperator(gmcp.Char.Worth.gold)
+  .." &lt;grey&gt;Bank&lt;white&gt;:&lt;gold&gt; "
+  ..asteriaui.addNumberSeperator(gmcp.Char.Worth.bank)
+  )
+end
+
+registerAnonymousEventHandler("gmcp.Char.Worth","asteriaui.updateXPDisplay")</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Update Room Display</name>
+					<packageName></packageName>
+					<script>function asteriaui.updateRoomDisplay()
+  asteriaui.questStatusColor = {
+    Undiscovered = "&lt;red&gt;",
+    Finished = "&lt;green&gt;",
+    Unfinished = "&lt;cyan&gt;",
+    Started = "&lt;dodger_blue&gt;",
+    
+  }
+  
+  
+  if gmcp.Room == nil then return end
+  asteriaui.roomDisplay:clear()
+  cecho("roomDisplay", fText.fText("&lt;white&gt;[ &lt;gold&gt;Room&lt;white&gt;: "..gmcp.Room.Info.num.." &lt;white&gt;]&lt;reset&gt;", {alignment = "center", formatType = "c", width = asteriaui.leftConsoleWidth/asteriaui.fontWidth, cap = "", spacer = "-", inside = true, mirror = true}))
+  cecho("roomDisplay", "\n")
+  cecho("roomDisplay", "&lt;dodger_blue&gt;Area&lt;white&gt;  : &lt;reset&gt;"..asteriaui.titleCase(string.gsub(gmcp.Room.Info.area, "_", " ")))
+  cecho("roomDisplay", "\n")
+  cecho("roomDisplay", "&lt;dodger_blue&gt;Env&lt;white&gt;   : &lt;reset&gt;"..gmcp.Room.Info.environment)
+  cecho("roomDisplay", "\n")
+  if gmcp.Room.Info.quest == 0 then
+    cecho("roomDisplay", "&lt;dodger_blue&gt;Quest&lt;white&gt; : &lt;reset&gt;None")
+  else
+    cecho("roomDisplay", "&lt;dodger_blue&gt;Quest&lt;white&gt; : &lt;gold&gt;"..gmcp.Room.Info.quest.." &lt;white&gt;("..asteriaui.questStatusColor[gmcp.Room.Info.queststatus]..gmcp.Room.Info.queststatus.."&lt;white&gt;)")
+    cecho("roomDisplay", "\n")
+    cecho("roomDisplay", "&lt;dodger_blue&gt;Name&lt;white&gt;  : &lt;reset&gt;")
+    cecho("roomDisplay", "&lt;reset&gt;"..[["]]..gmcp.Room.Info.questname..[["]])
+  end
+  
+end
+
+registerAnonymousEventHandler("gmcp.Room.Info","asteriaui.updateRoomDisplay")
+
+
+</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Settings</name>
+				<packageName></packageName>
+				<script></script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>Show Settings</name>
+					<packageName></packageName>
+					<script>function asteriaui.showSettings(event, name, oldTab, newTab)
+  if newTab == "Settings" then
+    
+    local setKeys = table.keys(asteriaui.settings)
+    
+    
+    -- Make sure the Settings container is empty before we write to it
+    asteriaui.mapContainer:clear("Settings")
+        
+    asteriaui.mapContainer:cecho("Settings", "\nClick on a setting to toggle it\n")
+    
+    for _,key in pairs(setKeys) do
+      asteriaui.mapContainer:cecho("Settings", "\n&lt;gold&gt;"..key.."&lt;white&gt;:\n")
+      for k,v in pairs(asteriaui.settings[key]) do
+        asteriaui.mapContainer:cecho("Settings", "&lt;white&gt;[")
+        if asteriaui.settings[key][k].status then
+          asteriaui.mapContainer:cecho("Settings", "&lt;green&gt;X")
+        else
+          asteriaui.mapContainer:cecho("Settings", " ")
+        end
+          asteriaui.mapContainer:cechoLink("Settings", "&lt;white&gt;] "..asteriaui.settings[key][k].desc.."\n", [[asteriaui.settingsHandler("]]..key..[[","]]..k..[[")]], asteriaui.settings[key][k].desc, true)
+      end
+    end
+  end
+end
+
+registerAnonymousEventHandler("EMCO tab change","asteriaui.showSettings")
+
+function asteriaui.settingsHandler(key, arg)
+  asteriaui.settings[key][arg].status = not asteriaui.settings[key][arg].status
+  if asteriaui.settings[key][arg].status then
+    asteriaui.displayUIMessage(asteriaui.settings[key][arg].desc.."  &lt;green&gt;ON")
+  else
+    asteriaui.displayUIMessage(asteriaui.settings[key][arg].desc.."  &lt;red&gt;OFF")
+  end
+  
+  table.save(getMudletHomeDir().."/asteriaui.settings.lua", asteriaui.settings)
+  
+  asteriaui.showSettings(_,_,_,"Settings")
+end
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Settings Table</name>
+					<packageName></packageName>
+					<script>function asteriaui.newSettings()
+  asteriaui.settings.UI = {
+    balanceGag = {
+      type = "Asteria UI",
+      desc = "Gag Balance Messages",
+      status = false,
+      default = false
+    },
+    emptyGag = {
+      type = "Asteria UI",
+      desc = "Gag Empty Lines",
+      status = false,
+      default = false
+    },
+    promptGag = {
+      type = "Asteria UI",
+      desc = "Gag Prompt",
+      status = false,
+      default = false
+    }
+  }
+end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<Script isActive="yes" isFolder="no">
+				<name>Utility Functions</name>
+				<packageName></packageName>
+				<script>function asteriaui.displayUIMessage(message)
+  cecho("\n&lt;green&gt;### &lt;dodger_blue&gt;Asteria UI     &lt;white&gt;:   &lt;orange&gt;"..message.."\n")
+end
+
+
+function asteriaui.addNumberSeperator(v)
+  local s = string.format("%d", math.floor(v))
+    local pos = string.len(s) % 3
+    if pos == 0 then pos = 3 end
+    
+    return string.sub(s, 1, pos) .. string.gsub(string.sub(s, pos+1), "(...)", ".%1")
+end
+
+
+function asteriaui.fixItemName(s)
+  return string.gsub(string.gsub(string.gsub(string.gsub(string.lower(s)," ","_"),"'",""),"\"",""),",","")
+end
+
+function asteriaui.handleResize()
+  registerNamedTimer("asteriaui.windowResize", "UI resize", 1,
+    function() 
+      asteriaui.createUI("rebuild")
+    end
+  )
+end
+
+
+function asteriaui.titleCase(str)
+    local buf = {}
+    for word in string.gfind(str, "%S+") do          
+        local first, rest = string.sub(word, 1, 1), string.sub(word, 2)
+        table.insert(buf, string.upper(first) .. string.lower(rest))
+    end    
+    return table.concat(buf, " ")
+end
+
+registerNamedEventHandler("asteriaui.windowResize", "UI resize", "sysWindowResizeEvent", asteriaui.handleResize)</script>
+				<eventHandlerList />
+			</Script>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>GMCP Triggers</name>
+				<packageName></packageName>
+				<script></script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>Switch to Map display automaticalliy when moving.</name>
+					<packageName></packageName>
+					<script>function asteriaui.switchToMap()
+  asteriaui.mapContainer:switchTab("Map")
+end
+
+registerAnonymousEventHandler("gmcp.Room.Info","asteriaui.switchToMap")</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+		</ScriptGroup>
+	</ScriptPackage>
+	<KeyPackage />
+	<HelpPackage>
+		<helpURL></helpURL>
+	</HelpPackage>
+</MudletPackage>
