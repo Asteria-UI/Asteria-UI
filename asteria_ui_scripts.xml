@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE MudletPackage>
 <MudletPackage version="1.001">
-	<TriggerPackage />
-	<TimerPackage />
-	<AliasPackage />
-	<ActionPackage />
 	<ScriptPackage>
 		<ScriptGroup isActive="yes" isFolder="yes">
 			<name>Asteria UI</name>
@@ -34,6 +30,7 @@ function asteriaui.connected()
   end
     
   -- Build the actual UI elements
+  asteriaui.newSettings()
   asteriaui.createUI()
 
 end
@@ -212,6 +209,7 @@ end</script>
   if action == "rebuild" then
     asteriaui.displayUIMessage("Rebuilding UI after window resize")
     centerview(mmp.currentroom)
+    local success = stopNamedTimer("asteriaui.windowResize","UI resize")
   else
     asteriaui.displayUIMessage("Building UI Elements")
   end
@@ -227,9 +225,7 @@ end</script>
   asteriaui.createEQDisplayHeadling()
   asteriaui.createEQDisplay()
   asteriaui.createRoomDisplay()
-  
-  local success = stopNamedTimer("asteriaui.windowResize","UI resize")
-  
+
   if action ~= "rebuild" then
     raiseEvent("asteriauiBuilt")
   end
@@ -996,7 +992,6 @@ function asteriaui.handleResize()
   )
 end
 
-
 function asteriaui.titleCase(str)
     local buf = {}
     for word in string.gfind(str, "%S+") do          
@@ -1025,10 +1020,178 @@ registerAnonymousEventHandler("gmcp.Room.Info","asteriaui.switchToMap")</script>
 					<eventHandlerList />
 				</Script>
 			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Walking/Room Checker</name>
+				<packageName></packageName>
+				<script></script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>Identify Visited Rooms</name>
+					<packageName></packageName>
+					<script>asteriaui.knownRooms = asteriaui.knownRooms or {}
+
+function asteriaui.checkRooms(var)
+local questNum
+local shopName
+local shopExists
+local roomCharBackup
+local setVisited
+local area = getRoomAreaName(getRoomArea(gmcp.Room.Info.num))
+
+
+  if asteriaui.markVisitedRooms and mmp.roomexists(gmcp.Room.Info.num) then
+    if getRoomChar(gmcp.Room.Info.num) ~= "X" then
+      roomCharBackup = getRoomChar(gmcp.Room.Info.num)
+    end
+    setRoomChar(gmcp.Room.Info.num, "X")
+    centerview(mmp.currentroom)
+    setVisited = true
+  else
+    setVisited = false
+    roomCharBackup = ""
+  end
+  
+  if gmcp.Room.Info.quest ~= 0 then
+    questNum = gmcp.Room.Info.quest
+    else
+    questNum = false
+  end
+
+  if gmcp.Room.Info.shop ~= "" then
+    shopName = gmcp.Room.Info.shop
+    shopExists = true
+    else
+    shopName = ""
+    shopExists = false
+  end
+  asteriaui:unHighLightRooms(gmcp.Room.Info.num)
+  asteriaui.knownRooms[gmcp.Room.Info.num] = {
+    area = area,
+    visited = setVisited,
+    quest = questNum,
+    shop = shopExists,
+    shopName = shopName,
+    roomCharBackup = roomCharBackup,
+  }
+
+table.save(getMudletHomeDir().."/asteriaui.knownRooms.lua", asteriaui.knownRooms)
+end
+
+registerNamedEventHandler("asteriaui","checkVisitedRooms","gmcp.Room.Info",
+  function()
+    asteriaui.checkRooms("walking")
+  end
+)
+
+
+function asteriaui:clearVisitedRooms()
+  for k,_ in pairs(asteriaui.knownRooms) do
+    if getRoomChar(k) == "X" then
+      echo("Room: "..k.." Char: "..getRoomChar(k).."\n")
+      setRoomChar(k,asteriaui.knownRooms[k].roomCharBackup)
+      centerview(mmp.currentroom)
+    end
+  end
+
+
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Show map exploration level</name>
+					<packageName></packageName>
+					<script>function asteriaui:showMapExpLevel()
+
+  -- Get the areas in the map
+  local mapTable = getAreaTable()
+  mapTable["Default Area"] = nil
+  mapTable["Underworld"] = nil
+  
+  cecho("\nRoom Name             Visited  Total   % Visited\n")
+  for k,v in spairs(mapTable) do
+    local roomCount = 0
+    -- Count how many rooms we have visited in each area
+    for num,area in pairs(asteriaui.knownRooms) do
+      if asteriaui.knownRooms[num].area == k then
+      roomCount = roomCount + 1
+      end
+    end
+    local areaName = string.format("%-25s", k)
+    local areaRooms = string.format("%4s", #getAreaRooms(v))
+    local visitedRooms = string.format("%4s", roomCount)
+    local visitedPercentage = string.sub(tostring((visitedRooms/areaRooms)*100),1,2)
+    visitedPercentage = string.format("%2s", string.gsub(visitedPercentage, "%D", ""))
+    cechoLink("&lt;dark_green&gt;"..areaName, [[asteriaui:showUnvisitedRooms("]]..v..[[")]], string.trim(areaName).." - show rooms", true)
+    cecho("&lt;green&gt;"..visitedRooms.." &lt;light_blue&gt;/ &lt;gold&gt;"..areaRooms.."       &lt;cyan&gt;[&lt;dodger_blue&gt;"..visitedPercentage.."&lt;grey&gt;%&lt;cyan&gt;]\n")
+  
+  end
+
+
+end
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Show unvisited roms in area</name>
+					<packageName></packageName>
+					<script>function asteriaui:showUnvisitedRooms(area)
+  local roomTable = getAreaRooms(area)
+  cecho("\nArea name: &lt;green&gt;"..getRoomAreaName(area).."\n\n")
+  cecho("&lt;cyan&gt;Distance:     (   id) Name:\n")
+  
+  for k,v in spairs(roomTable) do
+    local roomId = v
+    if not table.contains(asteriaui.knownRooms, roomId) then
+      local x, distance = getPath(getPlayerRoom(),roomId)
+      local roomName
+      if getRoomName(roomId) == "" then roomName = "Unknown name..." else roomName = getRoomName(roomId) end
+      cecho("&lt;white&gt;[&lt;gold&gt;"..string.format("%3s", distance).."&lt;white&gt;] &lt;light_blue&gt;")
+      cechoLink("Walk", [[mmp.gotoRoom(]]..roomId..[[)]], "Walk to room #"..roomId.." - "..roomName, true)
+      cecho("    &lt;white&gt;(&lt;reset&gt;"..string.format("%5s", roomId).."&lt;white&gt;) &lt;dark_green&gt;"..string.format("%-60s", roomName).."\n")
+    end
+  end
+  cecho("\n\n&lt;green&gt;Click here to ")
+  cechoLink("&lt;red&gt;hightlight ", [[asteriaui:highlightUnvisitedRooms(]]..area..[[)]], "", true)
+  cecho("&lt;green&gt;or ")
+  cechoLink("&lt;light_blue&gt;unhighlight ", [[asteriaui:highlightUnvisitedRooms(]]..area..[[,"unhighlight")]], "", true)
+  cecho("&lt;green&gt;unvisited rooms.")
+  
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Highlight unvisited roms in area</name>
+					<packageName></packageName>
+					<script>function asteriaui:highlightUnvisitedRooms(area, var)
+  local roomTable = getAreaRooms(area)
+  for k,v in spairs(roomTable) do
+    local roomId = v
+    if var == "unhighlight" then
+      asteriaui:unHighLightRooms(roomId)
+    else
+      if not table.contains(asteriaui.knownRooms, roomId) then
+        asteriaui:highLightRooms(roomId)
+      end
+    end
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Highlight rooms</name>
+					<packageName></packageName>
+					<script>function asteriaui:highLightRooms(room)
+  local r,g,b = unpack(color_table.red)
+  local br,bg,bb = unpack(color_table.blue)
+  highlightRoom(room, r,g,b,r,g,b, 0.8, 255, 0)
+end
+
+function asteriaui:unHighLightRooms(room)
+  unHighlightRoom(room)
+end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
 		</ScriptGroup>
 	</ScriptPackage>
-	<KeyPackage />
-	<HelpPackage>
-		<helpURL></helpURL>
-	</HelpPackage>
 </MudletPackage>
