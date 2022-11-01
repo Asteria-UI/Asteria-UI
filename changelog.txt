@@ -1,3 +1,4 @@
 changelog ={
-  [[Initial upload. Fully functional with certain GMCP values missing from game.]],
+  [[1:Initial upload. Fully functional with certain GMCP values missing from game.]],
+  [[2:Fixed automatic resizing, fixed settings not existing, added map highlighting]],
 }
