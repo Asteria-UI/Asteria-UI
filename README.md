@@ -4,7 +4,7 @@ This is the codespace for the collaberative Mudlet UI project for the Asteria Mu
 
 # So what does that mean?
 
-AsteriaUI is a modular framework with various elements that can all be installed on an as-needed basis! By utilizing self-contained modules, we've made it possible for users to customize their interface experience to suit their individual needs. Take a look at the Wiki for a selection of screenshots from users who've made the interface their own!
+AsteriaUI is a modular framework with various elements that can all be installed on an as-needed basis! By utilizing self-contained modules, we've made it possible for users to customize their interface experience to suit their individual needs. Take a look at [link to wiki with screenshots goes here.] for a selection of screenshots from users who've made the interface their own!
 
 # Sounds great, how do I get it?
 
