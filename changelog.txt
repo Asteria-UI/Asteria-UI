@@ -1,3 +1,4 @@
-changelog ={
-  [[1:Initial upload. Fully functional, but limited to chat capture, mapper and vital guages.]],
+changelog = {
+[[v0: Github test. Nothing here.]],
+[[v1: Initial upload. Fully functional, but limited to chat capture, mapper and vital guages.]],
 }
