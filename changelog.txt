@@ -1,4 +1,4 @@
-changelog = {
-[[v0: Github test. Nothing here.]],
-[[v1: Initial upload. Fully functional, but limited to chat capture, mapper and vital guages.]],
+changelog ={
+  [[1:Initial upload. Fully functional, but only chat capture, GMCP IRE style mapper and vital guages]],
+  [[4:Updated with a lot more automation, settings, left sidebar, automatic updates]],
 }
