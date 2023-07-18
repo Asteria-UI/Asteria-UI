@@ -1,4 +1,4 @@
 changelog ={
   [[1:Initial upload. Fully functional, but only chat capture, GMCP IRE style mapper and vital guages]],
-  [[4:Updated with a lot more automation, settings, left sidebar, automatic updates]],
+  [[2:Updated with a lot more automation, settings, left sidebar, automatic updates]],
 }
