@@ -1,4 +1,10 @@
 changelog ={
-  [[1:Initial upload. Fully functional, but only chat capture, GMCP IRE style mapper and vital guages]],
-  [[2:Updated with a lot more automation, settings, left sidebar, automatic updates]],
+  [[v1: Initial upload. Fully functional, but only chat capture, GMCP IRE style mapper and vital guages]],
+  [[v2: Updated with a lot more automation, settings, left sidebar, automatic updates]],
+  [[v3: Fixed automatic mapper install]],
+  [[v4: Fixed automatic updates not going to latest release]],
+  [[v5: Fixed generic mapper removal]],
+  [[v6: Windows users should now have an easier time]],
+  [[v7: Added exploration tracking - use the 'asui exploration' command]],
+  [[v8: Increased speed of room hightlight (asui exploration) function by 1 million %]],
 }
