@@ -9,4 +9,5 @@ changelog ={
   [[v8: Increased speed of room hightlight (asui exploration) function by 1 million %]],
   [[v9: Toggle-able gauges, moved spell and most relevant char info, game colors in channels, left side now auto-updates on size change, switched font to Ubuntu Mono, lots of other small improvements]],
 [[v10: Fixed bottom area, affects and buffs/debuffs now work completely on GMCP, new font]],
+[[v11: Fixed auto-update to support double digit versions. Duh!]],
 }
