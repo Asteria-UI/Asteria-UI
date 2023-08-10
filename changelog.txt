@@ -10,4 +10,5 @@ changelog ={
   [[v9: Toggle-able gauges, moved spell and most relevant char info, game colors in channels, left side now auto-updates on size change, switched font to Ubuntu Mono, lots of other small improvements]],
 [[v10: Fixed bottom area, affects and buffs/debuffs now work completely on GMCP, new font]],
 [[v11: Fixed auto-update to support double digit versions. Duh!]],
+[[v12: Walking is now much faster. Affects and buff/debuff now work with nominal values, remove known rooms from an area to re-discover, most elements are now much better aligned and scale properly]],
 }
