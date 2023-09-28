@@ -12,5 +12,6 @@ changelog ={
 [[v11: Fixed auto-update to support double digit versions. Duh!]],
 [[v12: Walking is now much faster. Affects and buff/debuff now work with nominal values, remove known rooms from an area to re-discover, most elements are now much better aligned and scale properly]],
 [[v12.1: Minor alignment fix]],
+[[v12.2: Relaunch version]],
 
 }
