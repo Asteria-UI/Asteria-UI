@@ -14,5 +14,5 @@ changelog ={
 [[v12.1: Minor alignment fix]],
 [[v12.2: Relaunch version]],
 [[v14: Relaunch version - including stats, affects, killbonus etc.]],
-
+[[v14.1: Added new quest status, added % TNL, added stance]],
 }
